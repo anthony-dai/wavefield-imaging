@@ -99,11 +99,11 @@ Y = Y(:);
 figure;
 
 % Plot the points
-scatter(X, Y, 'filled');
+scatter(X, Y, 'filled','black');
 
 % Draw the rectangle
 hold on;  % Hold on to add the rectangle to the same plot
-rectangle('Position', [0 0 width height], 'EdgeColor', 'r', 'LineWidth', 2);
+rectangle('Position', [0 0 width height], 'EdgeColor', 'b', 'LineWidth', 2);
 
 % Set the axis properties
 axis equal;
@@ -111,7 +111,8 @@ axis([0 width 0 height]);  % Set the axis limits to match the rectangle dimensio
 xlabel('X-axis');
 ylabel('Y-axis');
 title('Points Spread with Step Size h inside object D');
-
+% Invert y-axis to have positive y going down
+set(gca, 'YDir', 'reverse');
 % Add grid for better visualization
 grid on;
 
@@ -347,16 +348,20 @@ u_sc = A * chi_vec;
 %% min norm solution for x
 % Add noise
 % Specify the noise level
-noise_level = 1*10^(-9);
+noise_level = 1*10^(-4);
+% noise_level = 0;
 
 % Generate random noise
 noise = noise_level * rand(size(u_sc));
+
+% Load fixed noise at e-7
+% load('noise_eminus7.mat');
 
 % Add the noise to the vector
 u_sc_noisy = u_sc + noise;
 
 % using pseudo inverse
-x_min_norm = real(pinv(A) * u_sc_noisy);
+x_min_norm = pinv(A) * u_sc_noisy;
 
 % % svd
 % [U, S, V] = svd(A);
@@ -365,19 +370,23 @@ x_min_norm = real(pinv(A) * u_sc_noisy);
 % V = V(:,1:M);
 % x_min_norm_svd = real(V*inv(S)*U'*u_sc_noisy);
 
-% % truncated svd
-% [U, S, V] = svd(A);
-% S = S(1:M, 1:M);
-% U = U(:,1:M);
-% V = V(:,1:M);
-% x_min_norm_tsvd = 0
-% r_threshold = 3e-3;
-% for r = 1:size(S,1)
-%     x_min_norm_tsvd = 
-% end
+% truncated svd
+[U, S, V] = svd(A);
+S = S(1:M, 1:M);
+U = U(:,1:M);
+V = V(:,1:M);
+x_min_norm_tsvd = 0;
+r_threshold = 3e-5;
+singular_values_retained = 0;
+for r = 1:size(S,1)
+    if S(r,r) > r_threshold
+        x_min_norm_tsvd = x_min_norm_tsvd + 1 / S(r,r) * (U(:,r)' * u_sc_noisy) * V(:,r);
+        singular_values_retained = singular_values_retained + 1;
+    end
+end
 
 % Reshape vector into a m-by-n matrix
-X_min_norm = reshape(x_min_norm, [num_x_points, num_y_points]);
+X_min_norm = reshape(abs(x_min_norm_tsvd), [num_x_points, num_y_points]);
 
 % Plot X_min_norm
 figure;
