@@ -348,7 +348,7 @@ u_sc = A * chi_vec;
 %% min norm solution for x
 % Add noise
 % Specify the noise level
-noise_level = 1*10^(-4);
+noise_level = 1*10^(-7);
 % noise_level = 0;
 
 % Generate random noise
